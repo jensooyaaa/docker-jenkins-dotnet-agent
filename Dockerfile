@@ -3,6 +3,8 @@ ARG REPO=mcr.microsoft.com/dotnet/aspnet
 FROM eclipse-temurin:8u322-b06-jdk-focal AS jre-build
 FROM $REPO:5.0.14-bullseye-slim-amd64
 
+
+# From dotnet/dotnet-docker
 ENV \
     # Unset ASPNETCORE_URLS from aspnet base image
     ASPNETCORE_URLS= \
@@ -49,7 +51,8 @@ RUN powershell_version=7.1.5 \
     # To reduce image size, remove the copy nupkg that nuget keeps.
     && find /usr/share/powershell -print | grep -i '.*[.]nupkg$' | xargs rm
 
-# Configure Jenkins Agent
+
+# From jenkinsci/docker-agent
 ARG VERSION=4.12
 ARG user=jenkins
 ARG group=jenkins
@@ -96,3 +99,18 @@ LABEL \
     org.opencontainers.image.url="https://www.jenkins.io/" \
     org.opencontainers.image.source="https://github.com/jenkinsci/docker-agent" \
     org.opencontainers.image.licenses="MIT"
+
+
+# From jenkinsci/docker-inbound-agent
+ARG version
+LABEL Description="This is a base image, which allows connecting Jenkins agents via JNLP protocols" Vendor="Jenkins project" Version="$version"
+
+ARG user=jenkins
+
+USER root
+COPY ./jenkins-agent /usr/local/bin/jenkins-agent
+RUN chmod +x /usr/local/bin/jenkins-agent &&\
+    ln -s /usr/local/bin/jenkins-agent /usr/local/bin/jenkins-slave
+USER ${user}
+
+ENTRYPOINT ["/usr/local/bin/jenkins-agent"]
