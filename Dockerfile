@@ -52,6 +52,12 @@ RUN powershell_version=7.1.5 \
     && find /usr/share/powershell -print | grep -i '.*[.]nupkg$' | xargs rm
 
 
+# Install other needed tools
+RUN apt-get update \
+  && apt-get -y install \
+    openssh-client zip
+
+
 # From jenkinsci/docker-agent
 ARG VERSION=4.12
 ARG user=jenkins
@@ -99,6 +105,20 @@ LABEL \
     org.opencontainers.image.url="https://www.jenkins.io/" \
     org.opencontainers.image.source="https://github.com/jenkinsci/docker-agent" \
     org.opencontainers.image.licenses="MIT"
+
+
+# Create SSH Key
+RUN ssh-keygen -t rsa -b 2048 -f /home/${user}/.ssh/id_rsa -q -P ""
+RUN cat /home/${user}/.ssh/id_rsa.pub
+
+
+# Register gitlab host
+RUN ssh-keyscan -t rsa git1.mnl.citech.com.ph >> /home/${user}/.ssh/known_hosts
+
+
+# Download Coverage report tool
+RUN dotnet tool install -g dotnet-reportgenerator-globaltool
+ENV PATH="$PATH:/home/${user}/.dotnet/tools"
 
 
 # From jenkinsci/docker-inbound-agent
